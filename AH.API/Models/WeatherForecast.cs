@@ -1,6 +1,6 @@
 using System;
 
-namespace AH.API
+namespace AH.API.Models
 {
     public class WeatherForecast
     {
