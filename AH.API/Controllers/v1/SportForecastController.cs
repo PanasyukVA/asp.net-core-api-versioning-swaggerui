@@ -12,11 +12,11 @@ namespace AH.API.Controllers
     [Route("api/v{version:apiVersion}/sportforecasts")]
     public class SportForecastController : ControllerBase
     {
-        private static readonly List<Tuple<int, string>> Summaries = new List<Tuple<int, string>>
+        private static readonly List<Tuple<int, string, int>> Summaries = new List<Tuple<int, string, int>>
         {
-            new Tuple<int, string>(1, "Win"),
-            new Tuple<int, string>(2, "Draw"),
-            new Tuple<int, string>(3, "Loss")
+            new Tuple<int, string, int>(1, "Win", 3),
+            new Tuple<int, string, int>(2, "Draw", 1),
+            new Tuple<int, string, int>(3, "Loss", 0)
         };
 
         private readonly ILogger<SportForecastController> _logger;
@@ -30,32 +30,40 @@ namespace AH.API.Controllers
         public SportForecast Get(int id)
         {
             var summary = Summaries.FirstOrDefault(summary => summary.Item1 == id);
-            return new SportForecast() { Id = summary.Item1, Summary = summary.Item2 };
+            return new SportForecast() { Id = summary.Item1, Summary = summary.Item2, Points = summary.Item3 };
         }
 
         [HttpGet]
-        public ICollection<SportForecast> Get()
+        public ICollection<SportForecast> Get(int? points)
         {
-            var forecasts = Summaries.Select(summary => new SportForecast() { Id = summary.Item1, Summary = summary.Item2 });
+            var forecasts = Summaries
+                .Where(summary => summary.Item3 == (points ?? summary.Item3))
+                .Select(summary => new SportForecast() 
+            { 
+                Id = summary.Item1, 
+                Summary = summary.Item2,
+                Points = summary.Item3
+            });
             return forecasts.ToArray();
         }
 
         [HttpPost]
         public void Create(SportForecast forecast)
         {
-            var summary = new Tuple<int, string>(forecast.Id, forecast.Summary);
+            var summary = new Tuple<int, string, int>(forecast.Id, forecast.Summary, forecast.Points);
             Summaries.Add(summary);
         }
 
-        [HttpPut]
-        public void Update(SportForecast forecast)
+        [HttpPut("{id}")]
+        public void Update(int id, SportForecast forecast)
         {
-            var summary = new Tuple<int, string>(forecast.Id, forecast.Summary);
-            Summaries.Remove(summary);
+            Summaries.RemoveAll(summary => summary.Item1 == id);
+            
+            var summary = new Tuple<int, string, int>(forecast.Id, forecast.Summary, forecast.Points);
             Summaries.Add(summary);
         }
 
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public void Delete(int id)
         {
             Summaries.RemoveAll(summary => summary.Item1 == id);
